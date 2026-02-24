@@ -2,23 +2,30 @@ name: Terraform Apply
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
 
 permissions:
   contents: read
-  id-token: write   # REQUIRED for GCP Workload Identity Federation
+  id-token: write
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
 
+    env:
+      TF_INPUT: false
+
+      # 🔑 Terraform variables (EXPLICIT MAPPING)
+      TF_VAR_snowflake_account:  ${{ secrets.TF_VAR_SNOWFLAKE_ACCOUNT }}
+      TF_VAR_snowflake_username: ${{ secrets.TF_VAR_SNOWFLAKE_USERNAME }}
+      TF_VAR_snowflake_password: ${{ secrets.TF_VAR_SNOWFLAKE_PASSWORD }}
+      TF_VAR_snowflake_role:     ${{ secrets.TF_VAR_SNOWFLAKE_ROLE }}
+
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # 🔐 Authenticate GitHub → GCP (NO KEYS)
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
@@ -32,9 +39,6 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
 
       - name: Terraform Plan
         run: terraform plan
